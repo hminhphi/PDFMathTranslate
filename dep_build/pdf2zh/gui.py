@@ -110,7 +110,6 @@ lang_map = {
     "Russian": "ru",
     "Spanish": "es",
     "Italian": "it",
-    "Vietnamese": "vi",
 }
 
 # The following variable associate strings with page ranges
@@ -605,7 +604,7 @@ with gr.Blocks(
                 value=enabled_services[0],
             )
             envs = []
-            for i in range(6):
+            for i in range(3):
                 envs.append(
                     gr.Textbox(
                         visible=False,
@@ -665,7 +664,7 @@ with gr.Blocks(
             def on_select_service(service, evt: gr.EventData):
                 translator = service_map[service]
                 _envs = []
-                for i in range(6):
+                for i in range(4):
                     _envs.append(gr.update(visible=False, value=""))
                 for i, env in enumerate(translator.envs.items()):
                     label = env[0]
@@ -688,7 +687,7 @@ with gr.Blocks(
                         label=label,
                         value=value,
                     )
-                _envs.append(gr.update(visible=translator.CustomPrompt))
+                _envs[-1] = gr.update(visible=translator.CustomPrompt)
                 return _envs
 
             def on_select_filetype(file_type):
@@ -883,12 +882,11 @@ def setup_gui(
     # Try binding addresses in order: "::" accepts both IPv4+IPv6 on most
     # dual-stack systems, "0.0.0.0" is IPv4-only, "127.0.0.1" is loopback,
     # and finally fall back to Gradio's share mode.
-    import sys
     bind_addresses = []
-    if _has_ipv6() and sys.platform != "win32":
+    if _has_ipv6():
         bind_addresses.append("[::]")
-    bind_addresses.append("127.0.0.1")
     bind_addresses.append("0.0.0.0")
+    bind_addresses.append("127.0.0.1")
 
     for addr in bind_addresses:
         try:
@@ -902,10 +900,6 @@ def setup_gui(
             )
             return
         except Exception:
-            try:
-                demo.close()
-            except Exception:
-                pass
             print(
                 f"Error launching GUI using {addr}.\n"
                 "This may be caused by global mode of proxy software."

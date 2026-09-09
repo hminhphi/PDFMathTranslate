@@ -45,27 +45,6 @@ from pdf2zh.translator import (
 
 log = logging.getLogger(__name__)
 
-# Languages that use Latin Extended characters (U+0100+) in their native script.
-# For these languages, tiro (Times-Roman / WinAnsiEncoding, serif) must NOT be used
-# even for basic ASCII chars, because mixing it with GoNotoKurrent (sans-serif) in the
-# same word creates visible font inconsistency (e.g. Vietnamese "được" = d/ư/ợ/c where
-# the accented chars get noto but plain 'c' gets tiro → two different typefaces in one word).
-_LATIN_EXTENDED_LANGS = {
-    "vi",           # Vietnamese  (ă â ê ô ơ ư đ + full tonal system)
-    "pl",           # Polish      (ą ć ę ł ń ó ś ź ż)
-    "cs",           # Czech       (á č ď é ě í ň ó ř š ť ú ů ý ž)
-    "sk",           # Slovak
-    "hu",           # Hungarian   (á é í ó ö ő ú ü ű)
-    "ro",           # Romanian    (ă â î ș ț)
-    "hr",           # Croatian    (č ć đ š ž)
-    "lt",           # Lithuanian  (ą č ę ė į š ų ū ž)
-    "lv",           # Latvian     (ā č ē ģ ī ķ ļ ņ š ū ž)
-    "et",           # Estonian
-    "tr",           # Turkish     (ç ğ ı İ ö ş ü)
-    "sl",           # Slovenian
-    "bg",           # Bulgarian (Cyrillic, but included for safety)
-}
-
 
 class PDFConverterEx(PDFConverter):
     def __init__(
@@ -445,13 +424,7 @@ class TranslateConverter(PDFConverterEx):
                     ch = new[ptr]
                     fcur_ = None
                     try:
-                        # tiro = Times-Roman with WinAnsiEncoding covers U+0000-U+00FF only.
-                        # Vietnamese and other Latin-Extended chars (U+0100+) must use noto.
-                        if (
-                            fcur_ is None
-                            and ord(ch) <= 0xFF
-                            and self.fontmap["tiro"].to_unichr(ord(ch)) == ch
-                        ):
+                        if fcur_ is None and self.fontmap["tiro"].to_unichr(ord(ch)) == ch:
                             fcur_ = "tiro"  # 默认拉丁字体
                     except Exception:
                         pass

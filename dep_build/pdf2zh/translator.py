@@ -165,7 +165,7 @@ class BaseTranslator:
 
 class GoogleTranslator(BaseTranslator):
     name = "google"
-    lang_map = {"zh": "zh-CN", "vi": "vi"}
+    lang_map = {"zh": "zh-CN"}
 
     def __init__(self, lang_in, lang_out, model, ignore_cache=False, **kwargs):
         super().__init__(lang_in, lang_out, model, ignore_cache)
@@ -196,7 +196,7 @@ class GoogleTranslator(BaseTranslator):
 class BingTranslator(BaseTranslator):
     # https://github.com/immersive-translate/old-immersive-translate/blob/6df13da22664bea2f51efe5db64c63aca59c4e79/src/background/translationService.js
     name = "bing"
-    lang_map = {"zh": "zh-Hans", "vi": "vi"}
+    lang_map = {"zh": "zh-Hans"}
 
     def __init__(self, lang_in, lang_out, model, ignore_cache=False, **kwargs):
         super().__init__(lang_in, lang_out, model, ignore_cache)
@@ -241,7 +241,7 @@ class DeepLTranslator(BaseTranslator):
     envs = {
         "DEEPL_AUTH_KEY": None,
     }
-    lang_map = {"zh": "zh-Hans", "vi": "vi"}
+    lang_map = {"zh": "zh-Hans"}
 
     def __init__(
         self, lang_in, lang_out, model, envs=None, ignore_cache=False, **kwargs
@@ -265,7 +265,7 @@ class DeepLXTranslator(BaseTranslator):
         "DEEPLX_ENDPOINT": "https://api.deepl.com/translate",
         "DEEPLX_ACCESS_TOKEN": None,
     }
-    lang_map = {"zh": "zh-Hans", "vi": "vi"}
+    lang_map = {"zh": "zh-Hans"}
 
     def __init__(
         self, lang_in, lang_out, model, envs=None, ignore_cache=False, **kwargs
@@ -725,7 +725,7 @@ class AzureTranslator(BaseTranslator):
         "AZURE_ENDPOINT": "https://api.translator.azure.cn",
         "AZURE_API_KEY": None,
     }
-    lang_map = {"zh": "zh-Hans", "vi": "vi"}
+    lang_map = {"zh": "zh-Hans"}
 
     def __init__(
         self, lang_in, lang_out, model, envs=None, ignore_cache=False, **kwargs
@@ -1175,7 +1175,6 @@ class QwenMtTranslator(OpenAITranslator):
             "ru": "Russian",
             "es": "Spanish",
             "it": "Italian",
-            "vi": "Vietnamese",
         }
 
         return langdict[input_lang]
