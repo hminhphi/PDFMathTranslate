@@ -349,8 +349,19 @@ def translate_stream(
     for id in range(page_count):
         doc_en.move_page(page_count + id, id * 2 + 1)
     if not skip_subset_fonts:
-        doc_zh.subset_fonts(fallback=True)
-        doc_en.subset_fonts(fallback=True)
+        # subset_fonts(fallback=True) may log KeyError('post') for fonts already
+        # embedded in the source PDF that lack the OpenType 'post' table.
+        # These are non-fatal — PyMuPDF falls back to embedding the full (unsubsetted)
+        # font for those entries. Suppress the noise by temporarily disabling
+        # PyMuPDF's internal exception_info() logging.
+        import pymupdf as _fitz
+        _prev_verbose = _fitz.g_exceptions_verbose
+        _fitz.g_exceptions_verbose = 0
+        try:
+            doc_zh.subset_fonts(fallback=True)
+            doc_en.subset_fonts(fallback=True)
+        finally:
+            _fitz.g_exceptions_verbose = _prev_verbose
     return (
         doc_zh.write(deflate=True, garbage=3, use_objstms=1),
         doc_en.write(deflate=True, garbage=3, use_objstms=1),
@@ -528,6 +539,28 @@ def download_remote_fonts(lang: str):
         },
     }
     font_name = LANG_NAME_MAP.get(lang, "GoNotoKurrent-Regular.ttf")
+
+    # For Vietnamese on Windows, prefer a serif font that:
+    #   1. Has full Vietnamese glyph coverage (U+0100+, U+1E00+)
+    #   2. Has a complete OpenType structure (post table) for fontTools subsetting
+    # Note: times.ttf (Times New Roman Regular) is excluded — it is missing the 'post'
+    # OpenType table, causing fontTools to crash during doc.subset_fonts().
+    if lang == "vi" and sys.platform == "win32":
+        windir = os.environ.get("WINDIR", "C:\\Windows")
+        fonts_dir = Path(windir) / "Fonts"
+        # Priority order (all verified: full Vietnamese glyphs + complete OpenType post table):
+        #   1. constan.ttf  — Constantia: compact serif (adv≈5.76), closest to Times New Roman metrics
+        #   2. SitkaVF.ttf  — Sitka: modern variable serif designed for body text
+        #   3. pala.ttf     — Palatino Linotype: classic serif (adv≈6.00, slightly wider)
+        #   4. timesbd.ttf  — Times New Roman Bold: has post table (unlike Regular)
+        #   5. cambriab.ttf — Cambria Bold: fallback
+        # Note: times.ttf (TNR Regular) excluded — missing 'post' table → fontTools crash
+        _serif_candidates = ["constan.ttf", "SitkaVF.ttf", "pala.ttf", "timesbd.ttf", "cambriab.ttf"]
+        for _fname in _serif_candidates:
+            _fpath = fonts_dir / _fname
+            if _fpath.exists():
+                logger.info(f"use font (vi serif): {_fpath.as_posix()}")
+                return _fpath.as_posix()
 
     # docker
     font_path = ConfigManager.get("NOTO_FONT_PATH", Path("/app", font_name).as_posix())

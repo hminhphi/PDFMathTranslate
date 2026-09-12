@@ -445,10 +445,14 @@ class TranslateConverter(PDFConverterEx):
                     ch = new[ptr]
                     fcur_ = None
                     try:
-                        # tiro = Times-Roman with WinAnsiEncoding covers U+0000-U+00FF only.
-                        # Vietnamese and other Latin-Extended chars (U+0100+) must use noto.
+                        # tiro = Times-Roman / WinAnsiEncoding (serif, U+0000-U+00FF only).
+                        # Skip tiro entirely for languages with Latin Extended chars (e.g. vi, pl, cs):
+                        # mixing tiro (serif) with noto (sans-serif) in the same word creates
+                        # visible font inconsistency even for plain ASCII chars like 'c','n','h'.
+                        _lang = self.translator.lang_out.lower()
                         if (
                             fcur_ is None
+                            and _lang not in _LATIN_EXTENDED_LANGS
                             and ord(ch) <= 0xFF
                             and self.fontmap["tiro"].to_unichr(ord(ch)) == ch
                         ):
