@@ -17,6 +17,7 @@ dependencies = [
     "tqdm",
     "tenacity",
     "numpy",
+    "lxml",
     "ollama",
     "xinference-client",
     "deepl",
@@ -81,6 +82,7 @@ build-backend = "hatchling.build"
 [project.scripts]
 pdf2zh = "pdf2zh.pdf2zh:main"
 pdf2zh-setup-precise = "pdf2zh.kernel.precise:setup_precise_cli"
+pdf2zh-web = "pdf2zh.webui.server:main"
 
 [tool.flake8]
 ignore = ["E203", "E261", "E501", "W503", "E741"]

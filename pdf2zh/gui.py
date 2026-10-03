@@ -19,6 +19,7 @@ from pdf2zh import __version__
 from pdf2zh.high_level import translate
 from pdf2zh.doclayout import ModelInstance
 from pdf2zh.config import ConfigManager
+from pdf2zh.office import is_office_file
 from pdf2zh.translator import (
     AnythingLLMTranslator,
     AzureOpenAITranslator,
@@ -44,6 +45,7 @@ from pdf2zh.translator import (
     DeepseekTranslator,
     OpenAIlikedTranslator,
     QwenMtTranslator,
+    TLLMTranslator,
     X302AITranslator,
 )
 from babeldoc.docvision.doclayout import OnnxModel
@@ -95,6 +97,7 @@ service_map: dict[str, BaseTranslator] = {
     "MiniMax": MiniMaxTranslator,
     "OpenAI-liked": OpenAIlikedTranslator,
     "Ali Qwen-Translation": QwenMtTranslator,
+    "TLLM (Local)": TLLMTranslator,
     "302.AI": X302AITranslator,
 }
 
@@ -292,7 +295,7 @@ def translate_file(
         )
 
     filename = os.path.splitext(os.path.basename(file_path))[0]
-    file_raw = output / f"{filename}.pdf"
+    file_raw = Path(file_path)
     file_mono = output / f"{filename}-mono.pdf"
     file_dual = output / f"{filename}-dual.pdf"
 
@@ -382,6 +385,21 @@ def translate_file(
         raise gr.Error("Translation cancelled")
     print(f"Files after translation: {os.listdir(output)}")
 
+    if is_office_file(file_raw):
+        ext = file_raw.suffix.lower()
+        file_translated = output / f"{filename}-translated{ext}"
+        if not file_translated.exists():
+            raise gr.Error("No output")
+        progress(1.0, desc="Translation complete!")
+        return (
+            str(file_translated),
+            None,
+            str(file_translated),
+            gr.update(visible=True),
+            gr.update(visible=True),
+            gr.update(visible=True),
+        )
+
     if not file_mono.exists() or not file_dual.exists():
         raise gr.Error("No output")
 
@@ -427,6 +445,7 @@ def babeldoc_translate_file(**kwargs):
         DeepseekTranslator,
         OpenAIlikedTranslator,
         QwenMtTranslator,
+        TLLMTranslator,
         X302AITranslator,
     ]:
         if kwargs["service"] == translator.name:
@@ -589,7 +608,7 @@ with gr.Blocks(
             file_input = gr.File(
                 label="File",
                 file_count="single",
-                file_types=[".pdf", ".doc", ".docx"],
+                file_types=[".pdf", ".doc", ".docx", ".xlsx", ".pptx"],
                 type="filepath",
                 elem_classes=["input-file"],
             )

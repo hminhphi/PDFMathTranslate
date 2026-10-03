@@ -1,388 +1,334 @@
 <div align="center">
-	<a href="https://go.warp.dev/PDFMathTranslate" target="_blank">
-		<sup>Special thanks to:</sup>
-		<br>
-		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-02.png">
-		<br>
-		<h>Warp, built for coding with multiple AI agents</b>
-		<br>
-		<sup>Available for macOS, Linux and Windows</sup>
-	</a>
-</div>
 
-<br>
+<img src="./docs/images/banner.png" width="320px" alt="PDF2ZH"/>
 
-<div align="center">
+<h2>PDFMathTranslate</h2>
 
-English | [简体中文](docs/README_zh-CN.md) | [繁體中文](docs/README_zh-TW.md) | [日本語](docs/README_ja-JP.md) | [한국어](docs/README_ko-KR.md)
+**Scientific PDF and Office document translation with preserved layouts**
 
-<img src="./docs/images/banner.png" width="320px"  alt="PDF2ZH"/>
-
-<h2 id="title">PDFMathTranslate</h2>
+[简体中文](docs/README_zh-CN.md) | [繁體中文](docs/README_zh-TW.md) | [日本語](docs/README_ja-JP.md) | [한국어](docs/README_ko-KR.md) | English
 
 <p>
-  <!-- PyPI -->
-  <a href="https://pypi.org/project/pdf2zh/">
-    <img src="https://img.shields.io/pypi/v/pdf2zh"></a>
-  <a href="https://pepy.tech/projects/pdf2zh">
-    <img src="https://static.pepy.tech/badge/pdf2zh"></a>
-  <a href="https://hub.docker.com/r/byaidu/pdf2zh">
-    <img src="https://img.shields.io/docker/pulls/byaidu/pdf2zh"></a>
-  <a href="https://hellogithub.com/repository/8ec2cfd3ef744762bf531232fa32bc47" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=8ec2cfd3ef744762bf531232fa32bc47&claim_uid=JQ0yfeBNjaTuqDU&theme=small" alt="Featured｜HelloGitHub" /></a>
-  <a href="https://gitcode.com/Byaidu/PDFMathTranslate/overview">
-    <img src="https://gitcode.com/Byaidu/PDFMathTranslate/star/badge.svg"></a>
-  <a href="https://huggingface.co/spaces/reycn/PDFMathTranslate-Docker">
-    <img src="https://img.shields.io/badge/%F0%9F%A4%97-Online%20Demo-FF9E0D"></a>
-  <a href="https://www.modelscope.cn/studios/AI-ModelScope/PDFMathTranslate">
-    <img src="https://img.shields.io/badge/ModelScope-Demo-blue"></a>
-  <a href="https://github.com/Byaidu/PDFMathTranslate/pulls">
-    <img src="https://img.shields.io/badge/contributions-welcome-green"></a>
-  <a href="https://t.me/+Z9_SgnxmsmA5NzBl">
-    <img src="https://img.shields.io/badge/Telegram-2CA5E0?style=flat-squeare&logo=telegram&logoColor=white"></a>
-  <!-- License -->
-  <a href="./LICENSE">
-    <img src="https://img.shields.io/github/license/Byaidu/PDFMathTranslate"></a>
+  <a href="https://pypi.org/project/pdf2zh/"><img src="https://img.shields.io/pypi/v/pdf2zh"></a>
+  <a href="https://github.com/Byaidu/PDFMathTranslate"><img src="https://img.shields.io/badge/upstream-Byaidu%2FPDFMathTranslate-blue"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/Byaidu/PDFMathTranslate"></a>
+  <a href="https://github.com/Byaidu/PDFMathTranslate/pulls"><img src="https://img.shields.io/badge/contributions-welcome-green"></a>
 </p>
 
-<a href="https://trendshift.io/repositories/19816" target="_blank"><img src="https://trendshift.io/api/badge/repositories/19816" alt="PDFMathTranslate%2FPDFMathTranslate | Trendshift" style="width: 250px; height: 55px;" width="250" height="55"/></a>
-
 </div>
 
-<h2 id="updates">1. What does this do?</h2>
+---
 
-Scientific PDF document translation preserving layouts.
+## 1. What does this do?
 
-- 📊 Preserve formulas, charts, table of contents, and annotations.
-- 🌐 Support [multiple languages](#usage), and diverse [translation services](#usage).
-- 🤖 Provides [commandline tool](#usage), [interactive user interface](#install), and [Docker](#install)
+Translate scientific and technical documents while keeping their layout intact:
 
-<div align="center">
-<img src="./docs/images/preview.gif" width="80%"/>
-</div>
+- **PDF** — formulas, figures, tables, captions and table of contents keep their
+  original positions. Layout detection (DocLayout-YOLO), formula-aware text
+  extraction (pdfminer) and precise re-typesetting produce `-mono` and `-dual`
+  PDFs.
+- **Office** — `.docx`, `.xlsx` and `.pptx` are translated **in place**: text is
+  replaced inside the OOXML package so formatting, tables, text boxes, charts
+  and speaker notes stay untouched. No LibreOffice round-trip required.
+- **Web UI** — a viewer-first workspace (single / compare / overlay, search,
+  thumbnails, dark mode) for configuring, running and inspecting translations.
+- **Local translation LLMs** — a dedicated `tllm` service speaks the native
+  prompt formats of HY-MT1.5, TranslateGemma, Hunyuan-MT and Seed-X served by
+  LM Studio, llama.cpp, vLLM or Ollama.
 
-<h2 id="updates">2. Recent Updates</h2>
+> This repository is a downstream fork of
+> [Byaidu/PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate) that adds
+> Office support, the local translation-LLM service and the new web interface.
+> See [section 7](#7-differences-from-upstream) for details.
 
-- [September 8, 2026] Experimental OCR support, with paragraph regrouping and adaptive typesetting. (by [@reycn](https://github.com/reycn))
-- [March 23, 2026] Experimental support for v2.0 translation kernel using isolated environment (`--mode precise`). (by [@reycn](https://github.com/reycn))
-- [March 22, 2026] Supporting MiniMax (PR by [@octo-patch](https://github.com/octo-patch))
-- [March 22, 2026] Fixing OpenAI-related issues (PR by [@samqin123](https://github.com/samqin123))
-- [March 22, 2026] Fixing HTTP-related issues (PR by [@soukouki](https://github.com/soukouki))
-- [March 22, 2026] Faster model loading on mac and OONX platforms, GUI starting-up, version printing, and continuous integration.(by [@reycn](https://github.com/reycn))
-- [May 9, 2025] pdf2zh 2.0 Preview Version [#586](https://github.com/Byaidu/PDFMathTranslate/issues/586): The Windows ZIP file and Docker image are now available.
+---
 
-  > [!NOTE]
-  >
-  > 2.0 Moved to a new repository under the organization: [PDFMathTranslate/PDFMathTranslate-next](https://github.com/PDFMathTranslate/PDFMathTranslate-next)
-  > 
-  > Version 2.0 official release has been published.
+## 2. Installation
 
-<h2 id="use-section">3. Use 🌟</h2>
-<h3 id="demo">3.1 Online Service 🌟</h3>
+Python `3.11 <= version <= 3.12` is required.
 
-You can try our application out using either of the following demos:
+### 2.1 Using uv (recommended)
 
-- [Public free service](https://pdf2zh.com/) online without installation _(recommended)_.
-- [Immersive Translate - BabelDOC](https://app.immersivetranslate.com/babel-doc/) Free usage quota is available; please refer to the FAQ section on the page for details. _(recommended)_
-- [Demo hosted on HuggingFace](https://huggingface.co/spaces/reycn/PDFMathTranslate-Docker)
-- [Demo hosted on ModelScope](https://www.modelscope.cn/studios/AI-ModelScope/PDFMathTranslate) without installation.
-
-Note that the computing resources of the demo are limited, so please avoid abusing them.
-
-<h3 id="install">3.2 Local Installation</h3>
-
-For different use cases, we provide distinct methods to use our program:
-
-<details open>
-  <summary>3.2.1 Python: Install using uv</summary>
-
-1. Python installed (3.11 <= version <= 3.12)
-
-2. Install our package:
-
-   ```bash
-   pip install uv
-   uv tool install --python 3.12 pdf2zh
-   ```
-
-3. Execute translation, files generated in [current working directory](https://chatgpt.com/share/6745ed36-9acc-800e-8a90-59204bd13444):
-
-   ```bash
-   pdf2zh document.pdf
-   ```
-
-</details>
-<details>
-  <summary>3.2.2 Python: Install using pip</summary>
-
-1. Python installed (3.11 <= version <= 3.12)
-2. Install our package:
-
-   ```bash
-   pip install pdf2zh
-   ```
-
-3. Execute translation, files generated in [current working directory](https://chatgpt.com/share/6745ed36-9acc-800e-8a90-59204bd13444):
-
-   ```bash
-   pdf2zh document.pdf
-   ```
-
-</details>
-<details>
-  <summary>3.3.3 Python: Graphic user interface</summary>
-
-1. Python installed (3.11 <= version <= 3.12)
-
-2. Install our package:
-
-  ```bash
-  pip install pdf2zh
-  ```
-
-3. Start using in browser:
-
-   ```bash
-   pdf2zh -i
-   ```
-
-4. If your browser has not been started automatically, goto
-
-   ```bash
-   http://localhost:7860/
-   ```
-
-   <img src="./docs/images/gui.gif" width="500"/>
-
-See [documentation for GUI](./docs/README_GUI.md) for more details.
-
-</details>
-
-<details>
-  <summary>3.2.4 Application: On Windows</summary>
-
-1. Download pdf2zh-version-win64.zip from [release page](https://github.com/Byaidu/PDFMathTranslate/releases)
-
-2. Unzip and double-click `pdf2zh.exe` to run.
-
-
-  > [!TIP]
-  >
-  > - If you're using Windows and cannot open the file after downloading, please install [vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe) and try again.
-  > 
-</details>
-
-
-<details>
-
-<summary>3.2.5 Reference manager: Zotero Plugin</summary>
-
-
-See [Zotero PDF2zh](https://github.com/guaguastandup/zotero-pdf2zh) for more details.
-
-</details>
-
-
-<details>
-  <summary>3.2.6 Docker: Containerized Deployment</summary>
-
-1. Pull and run:
-
-   ```bash
-   docker pull byaidu/pdf2zh
-   docker run -d -p 7860:7860 byaidu/pdf2zh
-   ```
-
-2. Open in browser:
-
-   ```
-   http://localhost:7860/
-   ```
-
-For docker deployment on cloud service:
-
-<div>
-<a href="https://www.heroku.com/deploy?template=https://github.com/Byaidu/PDFMathTranslate">
-  <img src="https://www.herokucdn.com/deploy/button.svg" alt="Deploy" height="26"></a>
-<a href="https://render.com/deploy">
-  <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Koyeb" height="26"></a>
-<a href="https://zeabur.com/templates/5FQIGX?referralCode=reycn">
-  <img src="https://zeabur.com/button.svg" alt="Deploy on Zeabur" height="26"></a>
-<a href="https://template.sealos.io/deploy?templateName=pdf2zh">
-  <img src="https://sealos.io/Deploy-on-Sealos.svg" alt="Deploy on Sealos" height="26"></a>
-<a href="https://app.koyeb.com/deploy?type=git&builder=buildpack&repository=github.com/Byaidu/PDFMathTranslate&branch=main&name=pdf-math-translate">
-  <img src="https://www.koyeb.com/static/images/deploy/button.svg" alt="Deploy to Koyeb" height="26"></a>
-</div>
-
-> [!TIP]
->
-> - If you cannot access Docker Hub, please try the image on [GitHub Container Registry](https://github.com/Byaidu/PDFMathTranslate/pkgs/container/pdfmathtranslate).
-> ```bash
-> docker pull ghcr.io/byaidu/pdfmathtranslate
-> docker run -d -p 7860:7860 ghcr.io/byaidu/pdfmathtranslate
-> ```
-</details>
-
-<details>
-  <summary>3.2.* Solutions for network issues in installation</summary>
-
-  Users in specific regions may encounter network difficulties when loading the AI model. The current program relies on the AI model (`wybxc/DocLayout-YOLO-DocStructBench-onnx`), and some users are unable to download it due to these network issues.
-
-  To address issues with downloading this model, use the following environment variable as a workaround:
-
-  ```shell
-  set HF_ENDPOINT=https://hf-mirror.com
-  ```
-
-  For PowerShell user:
-
-  ```shell
-  $env:HF_ENDPOINT = https://hf-mirror.com
-  ```
-
-  If the solution does not work to you / you encountered other issues, please refer to [Frequently Asked Questions](https://github.com/Byaidu/PDFMathTranslate/wiki#-faq--%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98).
-</details>
-
-
-<h2 id="usage">4. Technical Details</h2>
-
-### Experimental automatic OCR (fast mode)
-
-Fast mode automatically runs local OCR on selected image-only pages before
-translation. Native text, existing OCR layers, and blank pages are skipped;
-the original pages in dual output remain unchanged. Install with
-`pip install 'pdf2zh[ocr]'` (or `pip install -e '.[ocr]'` from this checkout).
-The first scanned page downloads the requested language data from Tesseract's
-`tessdata_fast` 4.1.0 release into `~/.cache/pdf2zh/tessdata/4.1.0`; subsequent
-runs reuse it offline. Native-text PDFs do not trigger downloads.
-OCR uses the input language; `PDF2ZH_OCR_LANGUAGE=eng+deu` overrides it with
-Tesseract language codes. Set `TESSDATA_PREFIX` to use your own data without
-automatic downloads.
-
-PyMuPDF supplies the OCR engine; the optional extra adds Pooch for cached downloads.
-No separate Tesseract executable is required.
-OCR words are regrouped into paragraphs within detected layout regions before
-translation, with wrapped lines and soft hyphens joined. Translated paragraphs
-start at the median source font size and shrink to fit their original boxes;
-detected figures, tables, and standalone formulas remain untouched.
-The initial implementation targets white-background scans: partial scans on
-pages that already contain text are skipped, and handwritten text or inline
-equations may be recognized incorrectly. Precise mode is unchanged.
-
-### 4.1 Advanced options
-
-Execute the translation command in the command line to generate the translated document `example-mono.pdf` and the bilingual document `example-dual.pdf` in the current working directory. Use Google as the default translation service. More support translation services can find [HERE](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#services).
-
-<img src="./docs/images/cmd.explained.png" width="580px"  alt="cmd"/>
-
-In the following table, we list all advanced options for reference:
-
-| Option                | Function                                                                                                      | Example                                        |
-| --------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| files                 | Local files                                                                                                   | `pdf2zh ~/local.pdf`                           |
-| links                 | Online files                                                                                                  | `pdf2zh http://arxiv.org/paper.pdf`            |
-| `-i`                  | [Enter GUI](#gui)                                                                                             | `pdf2zh -i`                                    |
-| `-p`                  | [Partial document translation](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#partial) | `pdf2zh example.pdf -p 1`                      |
-| `-li`                 | [Source language](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#languages)            | `pdf2zh example.pdf -li en`                    |
-| `-lo`                 | [Target language](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#languages)            | `pdf2zh example.pdf -lo zh`                    |
-| `-s`                  | [Translation service](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#services)         | `pdf2zh example.pdf -s deepl`                  |
-| `-t`                  | [Multi-threads](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#threads)                | `pdf2zh example.pdf -t 1`                      |
-| `-o`                  | Output dir                                                                                                    | `pdf2zh example.pdf -o output`                 |
-| `-f`, `-c`            | [Exceptions](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#exceptions)                | `pdf2zh example.pdf -f "(MS.*)"`               |
-| `-cp`                 | Compatibility Mode                                                                                            | `pdf2zh example.pdf --compatible`              |
-| `--skip-subset-fonts` | [Skip font subset](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#font-subset)         | `pdf2zh example.pdf --skip-subset-fonts`       |
-| `--ignore-cache`      | [Ignore translate cache](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#cache)         | `pdf2zh example.pdf --ignore-cache`            |
-| `--share`             | Public link                                                                                                   | `pdf2zh -i --share`                            |
-| `--authorized`        | [Authorization](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#auth)                   | `pdf2zh -i --authorized users.txt [auth.html]` |
-| `--prompt`            | [Custom Prompt](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#prompt)                 | `pdf2zh --prompt [prompt.txt]`                 |
-| `--onnx`              | [Use Custom DocLayout-YOLO ONNX model]                                                                        | `pdf2zh --onnx [onnx/model/path]`              |
-| `--serverport`        | [Use Custom WebUI port]                                                                                       | `pdf2zh --serverport 7860`                     |
-| `--dir`               | [batch translate]                                                                                             | `pdf2zh --dir /path/to/translate/`             |
-| `--config`            | [configuration file](https://github.com/Byaidu/PDFMathTranslate/blob/main/docs/ADVANCED.md#cofig)             | `pdf2zh --config /path/to/config/config.json`  |
-| `--serverport`        | [custom gradio server port]                                                                                   | `pdf2zh --serverport 7860`                     |
-| `--mode`              | Translation mode: `fast` (default, v1) or `precise` (v2, experimental, requires pdf2zh_next submodule)         | `pdf2zh --mode precise example.pdf`            |
-| `--babeldoc`          | Use Experimental backend [BabelDOC](https://funstory-ai.github.io/BabelDOC/) to translate                     | `pdf2zh --babeldoc` -s openai example.pdf      |
-| `--mcp`               | Enable MCP STDIO mode                                                                                         | `pdf2zh --mcp`                                 |
-| `--sse`               | Enable MCP SSE mode                                                                                           | `pdf2zh --mcp --sse`                           |
-
-For detailed explanations, please refer to our document about [Advanced Usage](./docs/ADVANCED.md) for a full list of each option.
-
-<h3 id="downstream">4.2 Downstream Development</h3>
-For downstream applications, please refer to our document about [API Details](./docs/APIS.md) for further information about:
-
-- [Python API](./docs/APIS.md#api-python), how to use the program in other Python programs
-- [HTTP API](./docs/APIS.md#api-http), how to communicate with a server with the program installed
-
-<h3 id="downstream">4.3 Differences between two major forks</h3>
-
-- [Byaidu/PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate): The present and the original project for stable release.
-
-- [PDFMathTranslate/PDFMathTranslate-next](https://github.com/PDFMathTranslate/PDFMathTranslate-next): A fork with web-ui and additional features. This fork handles a large number of marginal cases, improves PDF compatibility, and optimizes cross-column and cross-page semantic consistency, dynamic scaling, and dynamic scaling consistency, among many other translation quality improvements. However, this fork is intended solely for development and does not address compatibility issues and is not designed for community-contributions.
-
-<h2 id="information">5. Project Information</h2>
-<h3 id="citation">5.1 Citation</h3>
-
-This work has been accepted by the [*Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing: System Demonstrations*](https://aclanthology.org/2025.emnlp-demos.71/) (EMNLP 2025). 
-
-Citation:
-
+```bash
+pip install uv
+uv tool install --python 3.12 pdf2zh
 ```
-@inproceedings{ouyang-etal-2025-pdfmathtranslate,
-	    title = "{PDFM}ath{T}ranslate: Scientific Document Translation Preserving Layouts",
-	    author = "Ouyang, Rongxin  and
-	      Chu, Chang  and
-	      Xin, Zhikuang  and
-	      Ma, Xiangyao",
-	    editor = {Habernal, Ivan  and
-	      Schulam, Peter  and
-	      Tiedemann, J{\"o}rg},
-	    booktitle = "Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
-	    month = nov,
-	    year = "2025",
-	    address = "Suzhou, China",
-	    publisher = "Association for Computational Linguistics",
-	    url = "https://aclanthology.org/2025.emnlp-demos.71/",
-	    pages = "918--924",
-	    ISBN = "979-8-89176-334-0",
-	    abstract = "Language barriers in scientific documents hinder the diffusion and development of science and technologies. However, prior efforts in translating such documents largely overlooked the information in layouts. To bridge the gap, we introduce PDFMathTranslate, the world{'}s first open-source software for translating scientific documents while preserving layouts. Leveraging the most recent advances in large language models and precise layout detection, we contribute to the community with key improvements in precision, flexibility, and efficiency. The work is open-sourced at https://github.com/byaidu/pdfmathtranslate with more than 222k downloads."
-	}
+
+### 2.2 Using pip
+
+```bash
+pip install pdf2zh
 ```
-<h3 id="acknowledgement">5.2 Acknowledgement</h3>
 
-- [Immersive Translation](https://immersivetranslate.com) sponsors monthly Pro membership redemption codes for active contributors to this project, see details at: [CONTRIBUTOR_REWARD.md](https://github.com/funstory-ai/BabelDOC/blob/main/docs/CONTRIBUTOR_REWARD.md)
+### 2.3 From this checkout
 
+```bash
+uv pip install -e .
+# or: pip install -e .
+```
+
+For OCR of scanned pages add the optional extra:
+
+```bash
+uv pip install -e '.[ocr]'
+```
+
+---
+
+## 3. Quick start
+
+### 3.1 Command line
+
+```bash
+# PDF: writes paper-mono.pdf and paper-dual.pdf to the current directory
+pdf2zh paper.pdf -li en -lo vi
+
+# Office: writes report-translated.docx (format preserved)
+pdf2zh report.docx -li en -lo vi
+
+# Spreadsheet / slides
+pdf2zh budget.xlsx -li en -lo vi
+pdf2zh deck.pptx  -li en -lo vi
+
+# A local translation LLM (see section 5)
+pdf2zh paper.pdf -li en -lo vi -s tllm
+
+# Translate a whole directory
+pdf2zh --dir ./papers -o ./translated
+```
+
+### 3.2 Web UI
+
+```bash
+pdf2zh -i
+```
+
+The browser opens at `http://localhost:7860/`. The workspace lets you:
+
+- drop a PDF/DOCX/XLSX/PPTX or paste a document URL;
+- pick languages, service, page range and advanced options;
+- watch progress and cancel a running job;
+- inspect the result in **Single**, **Compare** (source vs translated) or
+  **Overlay** mode with search, zoom, thumbnails and focus mode;
+- download mono/dual PDFs or the translated Office file.
+
+Use a custom port with `pdf2zh -i --serverport 8080`. The legacy Gradio
+interface is still available via `pdf2zh -i --gradio`.
+
+---
+
+## 4. Translation services
+
+| Service | Notes |
+| --- | --- |
+| Google / Bing | Free, no key required |
+| DeepL / DeepLX / Azure | API key required |
+| OpenAI / AzureOpenAI / Grok / Groq / DeepSeek / Gemini / MiniMax / Zhipu / ModelScope / Silicon / 302.AI | OpenAI-compatible LLM endpoints |
+| Ollama / Xinference / OpenAI-liked / Dify / AnythingLLM | Self-hosted endpoints |
+| Tencent / Ali Qwen-Translation | Cloud translation APIs |
+| Argos Translate | Fully offline, install `pdf2zh[argostranslate]` |
+| **TLLM (Local)** | Local translation LLMs — HY-MT1.5, TranslateGemma, Hunyuan-MT, Seed-X (section 5) |
+
+API keys and endpoints are stored in
+`~/.config/PDFMathTranslate/config.json` (or `%USERPROFILE%\.config\PDFMathTranslate\config.json`
+on Windows). Every option can also be supplied through environment variables.
+
+---
+
+## 5. Local translation LLMs (`tllm` service)
+
+General chat LLMs and dedicated translation LLMs use different prompts,
+sampling defaults and language tags. The `tllm` service handles those
+differences automatically.
+
+### 5.1 Serve a model
+
+| Runtime | Command |
+| --- | --- |
+| **LM Studio** (Windows/macOS) | Load `hy-mt1.5-1.8b` (GGUF) and start the local server on port 8080 |
+| **llama.cpp** | `llama-server -hf tencent/HY-MT1.5-1.8B-GGUF:Q8_0 --jinja -c 4096 -ngl 99` |
+| **vLLM** | `vllm serve tencent/HY-MT1.5-1.8B --trust-remote-code` |
+| **Ollama** | `ollama pull translategemma:12b` |
+
+Both the OpenAI-compatible API (`/v1/chat/completions`) and the LM Studio
+native API (`/api/v1/chat`) are supported and auto-detected from the base URL.
+
+### 5.2 Configure
+
+| Variable | Meaning | Default |
+| --- | --- | --- |
+| `TLLM_BASE_URL` | Server root. Add `/api` to force the LM Studio native API | `http://127.0.0.1:8080` |
+| `TLLM_API_KEY` | Bearer token (any value for local servers) | `local` |
+| `TLLM_MODEL` | Model name as served | `hy-mt1.5-1.8b` |
+| `TLLM_PRESET` | `hy-mt`, `hunyuan-mt`, `translategemma`, `seed-x` or `custom` | `hy-mt` |
+| `TLLM_GLOSSARY` | Terminology pairs, e.g. `gradient=đạo hàm;tensor=ten-xơ` | – |
+| `TLLM_TEMPLATE` | Prompt template used when `TLLM_PRESET=custom` (`{lang_out_name}`, `{text}`) | – |
+
+Set them in the web UI service fields, in `config.json`, or as environment
+variables:
+
+```bash
+# Windows PowerShell
+$env:TLLM_BASE_URL = "http://127.0.0.1:8080"
+$env:TLLM_MODEL = "hy-mt1.5-1.8b"
+pdf2zh paper.pdf -li en -lo vi -s tllm
+```
+
+### 5.3 Behaviour worth knowing
+
+- Presets use the models' official sampling defaults (HY-MT: `temperature=0.7`,
+  `top_p=0.6`, `top_k=20`, `repeat_penalty=1.05`; TranslateGemma: greedy).
+- Full language names are generated automatically (`vi` → `Vietnamese`,
+  `zh-TW` → `Traditional Chinese`).
+- Formula placeholders (`{v0}`) and Office run markers (`[[R0]]…[[/R0]]`) are
+  preserved via a dynamically built instruction. The instruction only mentions
+  marker kinds that actually occur, because naming absent placeholders makes
+  small models hallucinate them.
+- Glossary injection is skipped for text that contains run markers; 1.8B models
+  lose marker fidelity when both are combined. Plain paragraphs still receive
+  the glossary.
+- Run markers that small models mangle (`[R0]`, `[/R0]`) are parsed
+  tolerantly, and stray fragments are cleaned from the output.
+
+---
+
+## 6. Office translation details
+
+| Format | Coverage |
+| --- | --- |
+| `.docx` | Body, tables, headers/footers, footnotes/endnotes, comments, content controls, hyperlinks, text boxes (`w:txbxContent`), tabs and field placeholders |
+| `.pptx` | Slides, grouped shapes, tables, charts, diagram data, speaker notes |
+| `.xlsx` | Shared strings, inline strings, drawing text boxes, chart titles. **Formula cells (`f`) and cached values (`v`) are never touched** |
+
+How it works:
+
+1. the OOXML package is unzipped and each paragraph / string item is collected
+   with its run structure;
+2. runs are joined into one marked string (`[[R0]]…[[/R0]]`) so the translator
+   can reorder text while keeping run boundaries;
+3. translation goes through the regular pdf2zh services (cache included);
+4. each translated run is written back into its original text node; when the
+   translator drops the markers, the text is distributed proportionally across
+   the original runs;
+5. every untouched part of the package is copied byte-for-byte.
+
+Output files are named `<name>-translated.<ext>`. Old binary `.doc` files are
+still converted to PDF through LibreOffice.
+
+---
+
+## 7. Differences from upstream
+
+- **Office documents** are translated in place (upstream converts `.docx` to PDF
+  and loses editability).
+- **`tllm` service** for local translation LLMs with official prompt templates,
+  sampling defaults, glossary support and marker preservation.
+- **New viewer-first web UI** (`pdf2zh -i`); the original Gradio interface is
+  available via `--gradio`.
+- **Vietnamese** is available in the GUI/CLI language lists, and Vietnamese
+  font handling on Windows picks a serif font with full diacritic coverage and
+  a valid OpenType `post` table for font subsetting.
+
+---
+
+## 8. Advanced options
+
+| Option | Function | Example |
+| --- | --- | --- |
+| `files` | Local files | `pdf2zh ~/local.pdf` |
+| `links` | Online files | `pdf2zh http://arxiv.org/paper.pdf` |
+| `-i` | Web UI | `pdf2zh -i` |
+| `--gradio` | Legacy Gradio UI | `pdf2zh -i --gradio` |
+| `-p` | Partial document translation | `pdf2zh example.pdf -p 1` |
+| `-li` | Source language | `pdf2zh example.pdf -li en` |
+| `-lo` | Target language | `pdf2zh example.pdf -lo zh` |
+| `-s` | Translation service | `pdf2zh example.pdf -s tllm` |
+| `-t` | Threads | `pdf2zh example.pdf -t 1` |
+| `-o` | Output directory | `pdf2zh example.pdf -o output` |
+| `-f`, `-c` | Formula font/char exceptions | `pdf2zh example.pdf -f "(MS.*)"` |
+| `-cp` | Compatibility mode | `pdf2zh example.pdf --compatible` |
+| `--skip-subset-fonts` | Skip font subsetting | `pdf2zh example.pdf --skip-subset-fonts` |
+| `--ignore-cache` | Ignore the translation cache | `pdf2zh example.pdf --ignore-cache` |
+| `--prompt` | Custom LLM prompt | `pdf2zh --prompt prompt.txt` |
+| `--onnx` | Custom DocLayout-YOLO model | `pdf2zh --onnx onnx/model/path` |
+| `--serverport` | Web UI port | `pdf2zh -i --serverport 7860` |
+| `--dir` | Batch translate a directory | `pdf2zh --dir /path/to/translate/` |
+| `--config` | Custom config file | `pdf2zh --config /path/to/config.json` |
+| `--mode` | `fast` (default) or `precise` (experimental v2 kernel) | `pdf2zh --mode precise example.pdf` |
+| `--babeldoc` | Experimental BabelDOC backend | `pdf2zh --babeldoc -s openai example.pdf` |
+| `--mcp` | MCP STDIO mode | `pdf2zh --mcp` |
+| `--sse` | MCP SSE mode | `pdf2zh --mcp --sse` |
+
+Network-restricted regions can mirror the layout model download:
+
+```bash
+set HF_ENDPOINT=https://hf-mirror.com        # cmd
+$env:HF_ENDPOINT = "https://hf-mirror.com"   # PowerShell
+```
+
+---
+
+## 9. Python API
+
+Use `pdf2zh` from other Python programs:
+
+```python
+from pdf2zh.high_level import translate
+
+translate(files=["paper.pdf"], lang_in="en", lang_out="vi", service="google")
+```
+
+See [docs/APIS.md](./docs/APIS.md) for the full API reference and the HTTP API.
+
+---
+
+## 10. Development
+
+```bash
+uv pip install -e .
+uv run --no-sync python -m pytest test/ -q
+uv run --no-sync black pdf2zh test
+uv run --no-sync flake8 pdf2zh test
+```
+
+The web UI lives in `pdf2zh/webui/` (FastAPI backend + static viewer) and the
+Office pipeline in `pdf2zh/office/`.
+
+---
+
+## 11. Acknowledgements
+
+- Upstream engine: [Byaidu/PDFMathTranslate](https://github.com/Byaidu/PDFMathTranslate)
 - New backend: [BabelDOC](https://github.com/funstory-ai/BabelDOC)
-
 - Document merging: [PyMuPDF](https://github.com/pymupdf/PyMuPDF)
-
-- Document parsing: [Pdfminer.six](https://github.com/pdfminer/pdfminer.six)
-
-- Document extraction: [MinerU](https://github.com/opendatalab/MinerU)
-
-- Document Preview: [Gradio PDF](https://github.com/freddyaboulton/gradio-pdf)
-
-- Multi-threaded translation: [MathTranslate](https://github.com/SUSYUSTC/MathTranslate)
-
+- Document parsing: [pdfminer.six](https://github.com/pdfminer/pdfminer.six)
 - Layout parsing: [DocLayout-YOLO](https://github.com/opendatalab/DocLayout-YOLO)
+- Document preview: [Gradio PDF](https://github.com/freddyaboulton/gradio-pdf)
+- Multilingual font: [Go Noto Universal](https://github.com/satbyy/go-noto-universal)
+- Office write-back pipeline inspired by
+  [sanmu6-public](https://github.com/daodiaonan/sanmu6-public) and
+  [pptx-translate](https://github.com/Vncntvx/pptx-translate) (both MIT)
+- Local translation LLMs: [HY-MT](https://github.com/Tencent-Hunyuan/HY-MT),
+  [TranslateGemma](https://huggingface.co/google/translategemma-4b-it)
 
-- Document standard: [PDF Explained](https://zxyle.github.io/PDF-Explained/), [PDF Cheat Sheets](https://pdfa.org/resource/pdf-cheat-sheets/)
+## 12. Citation
 
-- Multilingual Font: [Go Noto Universal](https://github.com/satbyy/go-noto-universal)
+This work was accepted at the *Proceedings of the 2025 Conference on Empirical
+Methods in Natural Language Processing: System Demonstrations* (EMNLP 2025).
 
-<h3 id="contrib">5.3 Contributors</h3>
+```bibtex
+@inproceedings{ouyang-etal-2025-pdfmathtranslate,
+  title = "{PDFM}ath{T}ranslate: Scientific Document Translation Preserving Layouts",
+  author = "Ouyang, Rongxin and Chu, Chang and Xin, Zhikuang and Ma, Xiangyao",
+  booktitle = "Proceedings of the 2025 Conference on Empirical Methods in Natural Language Processing: System Demonstrations",
+  month = nov,
+  year = "2025",
+  publisher = "Association for Computational Linguistics",
+  pages = "918--924",
+  url = "https://aclanthology.org/2025.emnlp-demos.71/"
+}
+```
 
-<a href="https://github.com/Byaidu/PDFMathTranslate/graphs/contributors">
-  <img src="https://opencollective.com/PDFMathTranslate/contributors.svg?width=890&button=false" />
-</a>
+## 13. License
 
-![Alt](https://repobeats.axiom.co/api/embed/dfa7583da5332a11468d686fbd29b92320a6a869.svg "Repobeats analytics image")
-
-For details on how to contribute, please consult the [Contribution Guide](https://github.com/Byaidu/PDFMathTranslate/wiki/Contribution-Guide---%E8%B4%A1%E7%8C%AE%E6%8C%87%E5%8D%97).
-
-
-<h3 id="star_hist">5.4 Star History</h3>
-<!-- star-history:start -->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/star-history/star-history-dark.svg">
-  <img alt="Star history" src="assets/star-history/star-history-light.svg">
-</picture>
-<!-- star-history:end -->
+[AGPL-3.0](./LICENSE) — the same license as the upstream project.

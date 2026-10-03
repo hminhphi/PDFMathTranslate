@@ -103,7 +103,12 @@ def create_parser() -> argparse.ArgumentParser:
         "--interactive",
         "-i",
         action="store_true",
-        help="Interact with GUI.",
+        help="Interact with the web UI.",
+    )
+    parse_params.add_argument(
+        "--gradio",
+        action="store_true",
+        help="Use the legacy Gradio interface instead of the web UI.",
     )
     parse_params.add_argument(
         "--share",
@@ -230,10 +235,10 @@ def parse_args(args: Optional[List[str]]) -> argparse.Namespace:
 
 def find_all_files_in_directory(directory_path):
     """
-    Recursively search all PDF files in the given directory and return their paths as a list.
+    Recursively search all supported files in the given directory and return their paths as a list.
 
     :param directory_path: str, the path to the directory to search
-    :return: list of PDF file paths
+    :return: list of supported file paths
     """
     # Check if the provided path is a directory
     if not os.path.isdir(directory_path):
@@ -244,8 +249,10 @@ def find_all_files_in_directory(directory_path):
     # Walk through the directory recursively
     for root, _, files in os.walk(directory_path):
         for file in files:
-            # Check if the file is a PDF
-            if file.lower().endswith((".pdf", ".doc", ".docx")):
+            # Check if the file is a supported document
+            if file.lower().endswith(
+                (".pdf", ".doc", ".docx", ".xlsx", ".pptx")
+            ):
                 # Append the full file path to the list
                 file_paths.append(os.path.join(root, file))
 
@@ -287,14 +294,24 @@ def main(args: Optional[List[str]] = None) -> int:
         ModelInstance.value = OnnxModel.load_available()
 
     if parsed_args.interactive:
-        from pdf2zh.gui import setup_gui
+        if parsed_args.gradio:
+            from pdf2zh.gui import setup_gui
 
-        if parsed_args.serverport:
-            setup_gui(
-                parsed_args.share, parsed_args.authorized, int(parsed_args.serverport)
-            )
+            if parsed_args.serverport:
+                setup_gui(
+                    parsed_args.share,
+                    parsed_args.authorized,
+                    int(parsed_args.serverport),
+                )
+            else:
+                setup_gui(parsed_args.share, parsed_args.authorized)
         else:
-            setup_gui(parsed_args.share, parsed_args.authorized)
+            from pdf2zh.webui.server import run_server
+
+            run_server(
+                server_port=int(parsed_args.serverport or 7860),
+                open_browser=True,
+            )
         return 0
 
     if parsed_args.flask:
@@ -436,6 +453,7 @@ def yadt_main(parsed_args) -> int:
         DeepseekTranslator,
         OpenAIlikedTranslator,
         QwenMtTranslator,
+        TLLMTranslator,
         X302AITranslator,
     )
 
@@ -462,6 +480,7 @@ def yadt_main(parsed_args) -> int:
         DeepseekTranslator,
         OpenAIlikedTranslator,
         QwenMtTranslator,
+        TLLMTranslator,
         X302AITranslator,
     ]:
         if service_name == translator.name:

@@ -471,6 +471,27 @@ def translate(
                     f"Errors occur in downloading the PDF file. Please check the link(s).\nError:\n{e}"
                 )
 
+        # Office documents (docx/xlsx/pptx) are translated in place,
+        # preserving their original formatting.
+        from pdf2zh.office import is_office_file, translate_office_file
+
+        if is_office_file(file):
+            out_file = translate_office_file(
+                file,
+                lang_in=lang_in,
+                lang_out=lang_out,
+                service=service,
+                thread=thread,
+                output=output,
+                envs=envs,
+                prompt=prompt,
+                ignore_cache=ignore_cache,
+                callback=callback,
+                cancellation_event=cancellation_event,
+            )
+            result_files.append((str(out_file), str(out_file)))
+            continue
+
         # Convert doc/docx to PDF if needed
         _converted_pdf = None
         if is_convertible(file):

@@ -1197,3 +1197,294 @@ class QwenMtTranslator(OpenAITranslator):
             extra_body={"translation_options": translation_options},
         )
         return response.choices[0].message.content.strip()
+
+
+# Full English language names expected by the Hunyuan-MT / HY-MT prompt
+# templates (Tencent requires the full names, not the ISO codes).
+_TLLM_LANG_NAMES = {
+    "zh": "Chinese",
+    "zh-tw": "Traditional Chinese",
+    "yue": "Cantonese",
+    "en": "English",
+    "fr": "French",
+    "pt": "Portuguese",
+    "es": "Spanish",
+    "ja": "Japanese",
+    "tr": "Turkish",
+    "ru": "Russian",
+    "ar": "Arabic",
+    "ko": "Korean",
+    "th": "Thai",
+    "it": "Italian",
+    "de": "German",
+    "vi": "Vietnamese",
+    "ms": "Malay",
+    "id": "Indonesian",
+    "tl": "Filipino",
+    "hi": "Hindi",
+    "pl": "Polish",
+    "cs": "Czech",
+    "nl": "Dutch",
+    "km": "Khmer",
+    "my": "Burmese",
+    "fa": "Persian",
+    "gu": "Gujarati",
+    "ur": "Urdu",
+    "te": "Telugu",
+    "mr": "Marathi",
+    "he": "Hebrew",
+    "bn": "Bengali",
+    "ta": "Tamil",
+    "uk": "Ukrainian",
+    "bo": "Tibetan",
+    "kk": "Kazakh",
+    "mn": "Mongolian",
+    "ug": "Uyghur",
+}
+
+_TLLM_LANG_ALIASES = {
+    "zh-cn": "zh",
+    "zh-hans": "zh",
+    "zh-hant": "zh-tw",
+}
+
+_TLLM_PRESETS = {
+    "hy-mt": {
+        "template": (
+            "Translate the following segment into {lang_out_name},"
+            " without additional explanation.{tag_clause}\n\n{text}"
+        ),
+        "temperature": 0.7,
+        "top_p": 0.6,
+        "top_k": 20,
+        "repeat_penalty": 1.05,
+    },
+    "hunyuan-mt": {
+        "template": (
+            "Translate the following segment into {lang_out_name},"
+            " without additional explanation.{tag_clause}\n\n{text}"
+        ),
+        "temperature": 0.7,
+        "top_p": 0.6,
+        "top_k": 20,
+        "repeat_penalty": 1.05,
+    },
+    "translategemma": {
+        "template": "<<<source>>>{lang_in_code}<<<target>>>{lang_out_code}<<<text>>>{text}",
+        "temperature": 0.0,
+    },
+    "seed-x": {
+        "template": (
+            "Translate the following segment into {lang_out_name},"
+            " without additional explanation.{tag_clause}\n\n{text}<{lang_out_code}>"
+        ),
+        "temperature": 0.7,
+        "top_p": 0.9,
+    },
+    "custom": {"template": "", "temperature": 0.0},
+}
+
+
+def _tllm_lang_name(code: str) -> str:
+    normalized = (code or "").strip().lower()
+    normalized = _TLLM_LANG_ALIASES.get(normalized, normalized)
+    return _TLLM_LANG_NAMES.get(normalized, code)
+
+
+class TLLMTranslator(BaseTranslator):
+    """Local Translation LLM service (HY-MT, TranslateGemma, Seed-X...).
+
+    Speaks either the OpenAI-compatible chat API or the LM Studio native
+    REST API (``POST /api/v1/chat``). Prompt templates, sampling defaults,
+    terminology injection and tag preservation follow the models' official
+    recommendations, which differ from generic chat LLM usage.
+    """
+
+    name = "tllm"
+    CustomPrompt = False
+    envs = {
+        "TLLM_BASE_URL": "http://127.0.0.1:8080",
+        "TLLM_API_KEY": "local",
+        "TLLM_MODEL": "hy-mt1.5-1.8b",
+        "TLLM_PRESET": "hy-mt",  # hy-mt | hunyuan-mt | translategemma | seed-x | custom
+        "TLLM_GLOSSARY": "",  # e.g. "gradient=đạo hàm;tensor=ten-xơ"
+        "TLLM_TEMPLATE": "",  # required when TLLM_PRESET=custom
+    }
+
+    def __init__(
+        self, lang_in, lang_out, model, envs=None, ignore_cache=False, **kwargs
+    ):
+        self.set_envs(envs)
+        if not model:
+            model = self.envs["TLLM_MODEL"]
+        super().__init__(lang_in, lang_out, model, ignore_cache)
+
+        preset = (self.envs.get("TLLM_PRESET") or "hy-mt").strip().lower()
+        if preset not in _TLLM_PRESETS:
+            raise ValueError(
+                f"Unknown TLLM preset: {preset}. "
+                f"Supported: {', '.join(sorted(_TLLM_PRESETS))}"
+            )
+        if preset == "custom" and not (self.envs.get("TLLM_TEMPLATE") or "").strip():
+            raise ValueError("TLLM_TEMPLATE is required when TLLM_PRESET=custom")
+        self.preset = preset
+        self.glossary = self._parse_glossary(self.envs.get("TLLM_GLOSSARY") or "")
+        self.session = requests.Session()
+        self.transport, self.endpoint = self._resolve_transport(
+            self.envs["TLLM_BASE_URL"]
+        )
+        self.add_cache_impact_parameters("preset", preset)
+        self.add_cache_impact_parameters(
+            "template", self.envs.get("TLLM_TEMPLATE") or ""
+        )
+        self.add_cache_impact_parameters("glossary", self.glossary)
+
+    @staticmethod
+    def _parse_glossary(value: str) -> list[tuple[str, str]]:
+        pairs: list[tuple[str, str]] = []
+        for raw in re.split(r"[\n;]+", value):
+            raw = raw.strip()
+            if not raw:
+                continue
+            for separator in ("=>", "->", "="):
+                if separator in raw:
+                    source, _, target = raw.partition(separator)
+                    source, target = source.strip(), target.strip()
+                    if source and target:
+                        pairs.append((source, target))
+                    break
+        return pairs
+
+    @staticmethod
+    def _resolve_transport(base_url: str) -> tuple[str, str]:
+        base = (base_url or "http://127.0.0.1:8080").strip().rstrip("/")
+        if "/api/" in base or base.endswith("/api"):
+            root = base[: -len("/api/v1")] if base.endswith("/api/v1") else base
+            return "lmstudio", root.rstrip("/") + "/api/v1/chat"
+        if base.endswith("/v1/chat/completions"):
+            return "openai", base
+        if base.endswith("/v1"):
+            return "openai", base + "/chat/completions"
+        return "openai", base + "/v1/chat/completions"
+
+    def _render_prompt(self, text: str) -> str:
+        if self.preset == "custom":
+            template = self.envs.get("TLLM_TEMPLATE") or ""
+        else:
+            template = _TLLM_PRESETS[self.preset]["template"]
+        rendered = (
+            template.replace("{lang_in_name}", _tllm_lang_name(self.lang_in))
+            .replace("{lang_out_name}", _tllm_lang_name(self.lang_out))
+            .replace("{lang_in_code}", self.lang_in)
+            .replace("{lang_out_code}", self.lang_out)
+        )
+        rendered = rendered.replace("{tag_clause}", self._tag_clause(text))
+        # Local 1.8B models lose run markers when a glossary prefix is also
+        # present, so terminology injection only applies to plain text.
+        if self.glossary and "[[" not in text:
+            lines = ["Please use the following term translations consistently:"]
+            lines.extend(f"{source} -> {target}" for source, target in self.glossary)
+            rendered = "\n".join(lines) + "\n\n" + rendered
+        return rendered.replace("{text}", text)
+
+    @staticmethod
+    def _tag_clause(text: str) -> str:
+        """Mention only the marker kinds actually present.
+
+        Naming absent placeholders (e.g. ``{v0}`` in Office text) makes the
+        model hallucinate them, so each clause is added conditionally.
+        """
+        clauses = []
+        if re.search(r"\{\s*v\d+\s*\}", text):
+            clauses.append("Keep the placeholder tokens such as {v0} unchanged.")
+        if "[[" in text:
+            clauses.append("Keep the tags such as [[R0]]...[[/R0]] unchanged.")
+        if not clauses:
+            return ""
+        return " " + " ".join(clauses)
+
+    @retry(
+        retry=retry_if_exception_type((requests.ConnectionError, requests.Timeout)),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+    )
+    def do_translate(self, text) -> str:
+        preset = _TLLM_PRESETS[self.preset]
+        prompt = self._render_prompt(text)
+        headers = {"Content-Type": "application/json"}
+        api_key = self.envs.get("TLLM_API_KEY")
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        if self.transport == "lmstudio":
+            payload = {
+                "model": self.model,
+                "input": prompt,
+                "temperature": preset.get("temperature", 0.0),
+            }
+            if preset.get("top_p") is not None:
+                payload["top_p"] = preset["top_p"]
+            if preset.get("top_k"):
+                payload["top_k"] = preset["top_k"]
+            if preset.get("repeat_penalty"):
+                payload["repeat_penalty"] = preset["repeat_penalty"]
+            response = self.session.post(
+                self.endpoint, json=payload, headers=headers, timeout=300
+            )
+            response.raise_for_status()
+            content = self._parse_lmstudio_response(response.json())
+        else:
+            payload = {
+                "model": self.model,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": preset.get("temperature", 0.0),
+            }
+            if preset.get("top_p") is not None:
+                payload["top_p"] = preset["top_p"]
+            response = self.session.post(
+                self.endpoint, json=payload, headers=headers, timeout=300
+            )
+            response.raise_for_status()
+            data = response.json()
+            content = data["choices"][0]["message"]["content"]
+        return self._clean_translation(content or "")
+
+    @staticmethod
+    def _parse_lmstudio_response(data) -> str:
+        output = data.get("output")
+        if isinstance(output, str):
+            return output
+        if isinstance(output, list):
+            messages = [
+                str(part.get("content", ""))
+                for part in output
+                if isinstance(part, dict) and part.get("type") == "message"
+            ]
+            if messages:
+                return "".join(messages)
+            return "".join(
+                str(part.get("content", ""))
+                for part in output
+                if isinstance(part, dict)
+            )
+        return ""
+
+    @staticmethod
+    def _clean_translation(text: str) -> str:
+        text = (text or "").strip()
+        prefix = re.compile(
+            r"^(?:translation|translated text|output)\s*[:：]\s*",
+            flags=re.IGNORECASE,
+        )
+        text = prefix.sub("", text).strip()
+        quote_pairs = {
+            '"': '"',
+            "'": "'",
+            "“": "”",
+            "‘": "’",
+            "「": "」",
+            "『": "』",
+            "《": "》",
+        }
+        while len(text) >= 2 and quote_pairs.get(text[0]) == text[-1]:
+            text = text[1:-1].strip()
+        return text
