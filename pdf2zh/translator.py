@@ -1248,6 +1248,8 @@ _TLLM_LANG_ALIASES = {
     "zh-hant": "zh-tw",
 }
 
+_LIST_MARKER_RE = re.compile(r"^\s*((?:\d+|[A-Za-z])[.)])\s+")
+
 _TLLM_PRESETS = {
     "hy-mt": {
         "template": (
@@ -1338,6 +1340,9 @@ class TLLMTranslator(BaseTranslator):
             "template", self.envs.get("TLLM_TEMPLATE") or ""
         )
         self.add_cache_impact_parameters("glossary", self.glossary)
+        # Bump when the post-processing repairs change, so stale cached
+        # translations (which lack the repairs) are not reused.
+        self.add_cache_impact_parameters("postprocess", 2)
 
     @staticmethod
     def _parse_glossary(value: str) -> list[tuple[str, str]]:
@@ -1396,9 +1401,14 @@ class TLLMTranslator(BaseTranslator):
         """
         clauses = []
         if re.search(r"\{\s*v\d+\s*\}", text):
-            clauses.append("Keep the placeholder tokens such as {v0} unchanged.")
+            clauses.append(
+                "Keep the placeholder tokens such as {v0} unchanged."
+                " Every placeholder must appear exactly once, in the same order."
+            )
         if "[[" in text:
             clauses.append("Keep the tags such as [[R0]]...[[/R0]] unchanged.")
+        if _LIST_MARKER_RE.match(text):
+            clauses.append("Keep the leading list number such as 1. unchanged.")
         if not clauses:
             return ""
         return " " + " ".join(clauses)
@@ -1446,7 +1456,46 @@ class TLLMTranslator(BaseTranslator):
             response.raise_for_status()
             data = response.json()
             content = data["choices"][0]["message"]["content"]
-        return self._clean_translation(content or "")
+        return self._repair_list_marker(
+            text,
+            self._repair_placeholders(text, self._clean_translation(content or "")),
+        )
+
+    _PLACEHOLDER_RE = re.compile(r"\{\s*v(\d+)\s*\}", re.IGNORECASE)
+
+    @classmethod
+    def _repair_placeholders(cls, source: str, translated: str) -> str:
+        """Re-add formula placeholders the model dropped.
+
+        Small local models occasionally drop ``{vN}`` tokens; losing them
+        removes the original formula glyphs from the PDF. Missing tokens are
+        prepended in source order, which restores leading list markers and
+        inline formulas at their most common position.
+        """
+        source_ids = cls._PLACEHOLDER_RE.findall(source)
+        if not source_ids:
+            return translated
+        present = set(cls._PLACEHOLDER_RE.findall(translated))
+        missing = [pid for pid in source_ids if pid not in present]
+        if not missing:
+            return translated
+        logger.warning(
+            "TLLM dropped %d placeholder(s) %s; re-inserting them",
+            len(missing),
+            missing,
+        )
+        return "".join(f"{{v{pid}}}" for pid in missing) + translated
+
+    @classmethod
+    def _repair_list_marker(cls, source: str, translated: str) -> str:
+        """Re-add a leading list number ("1. ", "a) ") the model dropped."""
+        match = _LIST_MARKER_RE.match(source)
+        if not match or _LIST_MARKER_RE.match(translated):
+            return translated
+        logger.warning(
+            "TLLM dropped the list number %r; re-inserting it", match.group(1)
+        )
+        return f"{match.group(1)} {translated}"
 
     @staticmethod
     def _parse_lmstudio_response(data) -> str:

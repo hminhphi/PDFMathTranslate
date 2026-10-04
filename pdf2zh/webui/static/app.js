@@ -100,6 +100,7 @@
     fileChip.hidden = false; dropzone.hidden = true;
     $('filePillName').textContent = f.name;
     $('filePillDot').hidden = false;
+    previewSelectedFile(f);
     refreshReady();
   }
   function clearFile() {
@@ -107,7 +108,42 @@
     fileChip.hidden = true; dropzone.hidden = false;
     $('filePillName').textContent = 'No document selected';
     $('filePillDot').hidden = true;
+    resetViewer();
     refreshReady();
+  }
+  function resetViewer() {
+    state.translated = false;
+    state.jobId = null;
+    state.outputs = null;
+    state.page = 1;
+    state.zoom = 1; state.fitted = null;
+    state.pdf = { source: null, translated: null };
+    state.textCache = { source: {}, translated: {} };
+    state.numPages = 0;
+    state.isPdf = false;
+    state.rendered = { source: null, translated: null };
+    state.side = 'source';
+    document.querySelectorAll('[data-view]').forEach(function (b) { if (b.getAttribute('data-view') !== 'single') b.disabled = true; });
+    document.querySelectorAll('[data-side]').forEach(function (x) { x.setAttribute('aria-checked', x.getAttribute('data-side') === 'source' ? 'true' : 'false'); });
+    document.querySelector('[data-side="translated"]').disabled = true;
+    setViewMode('single');
+    applyZoom(); updateToolbar(); renderViewer();
+  }
+  function previewSelectedFile(f) {
+    resetViewer();
+    state.isPdf = /\.pdf$/i.test(f.name);
+    if (!state.isPdf) { renderViewer(); return; }
+    f.arrayBuffer().then(function (buffer) {
+      return pdfjsLib.getDocument({ data: buffer }).promise;
+    }).then(function (doc) {
+      state.pdf.source = doc;
+      state.numPages = doc.numPages;
+      updateToolbar();
+      renderViewer();
+    }).catch(function () {
+      state.isPdf = false;
+      renderViewer();
+    });
   }
   dropzone.addEventListener('click', function () { fileInput.click(); });
   fileInput.addEventListener('change', function () { if (fileInput.files && fileInput.files[0]) setFile(fileInput.files[0]); });
@@ -228,8 +264,13 @@
   function renderViewer() {
     stageInner.innerHTML = '';
     state.rendered = { source: null, translated: null };
-    if (!state.translated || !state.isPdf) {
+    if (!state.isPdf) {
       renderOfficeView();
+      return;
+    }
+    if (!state.translated && !state.pdf.source) {
+      emptyStage('Translate a document to preview it here.');
+      renderThumbs();
       return;
     }
     var jobs = [];
@@ -262,7 +303,29 @@
   }
 
   function renderOfficeView() {
-    if (!state.translated) { emptyStage('Translate a document to preview it here.'); renderThumbs(); return; }
+    if (!state.translated) {
+      var hasSource = !!state.file || !!$('linkInput').value.trim();
+      if (!hasSource) {
+        emptyStage('Translate a document to preview it here.');
+        renderThumbs();
+        return;
+      }
+      stageInner.innerHTML = '';
+      var infoCard = el('div', 'doc-page office-card');
+      var infoEyebrow = el('p', 'doc-page__eyebrow');
+      infoEyebrow.textContent = 'Office document · preview after translation';
+      infoCard.appendChild(infoEyebrow);
+      var infoTitle = el('h4');
+      infoTitle.textContent = 'Format-preserving translation';
+      infoCard.appendChild(infoTitle);
+      var infoText = el('p');
+      infoText.textContent = 'Word, Excel and PowerPoint files are translated in place. ' +
+        'The viewer preview is available for PDF files; press Translate to produce the formatted document.';
+      infoCard.appendChild(infoText);
+      stageInner.appendChild(infoCard);
+      renderThumbs();
+      return;
+    }
     stageInner.innerHTML = '';
     var card = el('div', 'doc-page office-card');
     var eyebrow = el('p', 'doc-page__eyebrow');
@@ -297,7 +360,7 @@
 
   function renderThumbs() {
     thumbs.innerHTML = '';
-    if (!state.translated || !state.isPdf) { return; }
+    if (!state.isPdf || !state.pdf.source) { return; }
     var total = Math.min(state.numPages, 80);
     for (var i = 1; i <= total; i++) {
       (function (pageNum) {

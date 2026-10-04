@@ -6,6 +6,7 @@ from unittest import mock
 import requests
 
 from pdf2zh import cache
+from pdf2zh.config import ConfigManager
 from pdf2zh.translator import TLLMTranslator, _tllm_lang_name
 
 
@@ -41,6 +42,11 @@ class TestTLLMTranslator(unittest.TestCase):
 
     def tearDown(self):
         cache.clean_test_db(self.test_db)
+        # Constructing a translator persists its envs; restore the defaults so
+        # tests with intentionally invalid presets do not poison the config.
+        ConfigManager.set_translator_by_name(
+            TLLMTranslator.name, dict(TLLMTranslator.envs)
+        )
 
     def _translator(self, **env_overrides):
         return TLLMTranslator(
@@ -148,6 +154,47 @@ class TestTLLMTranslator(unittest.TestCase):
         self.assertEqual(_tllm_lang_name("zh-Hans"), "Chinese")
         self.assertEqual(_tllm_lang_name("zh-TW"), "Traditional Chinese")
         self.assertEqual(_tllm_lang_name("unknown-code"), "unknown-code")
+
+    def test_placeholder_repair_when_dropped(self):
+        translator = self._translator()
+        response = FakeResponse(
+            {"choices": [{"message": {"content": "Tình trạng quá khớp của đa thức."}}]}
+        )
+        with mock.patch.object(requests.Session, "post", return_value=response):
+            result = translator.do_translate("{v0}Overfitting of polynomial matching.")
+        self.assertTrue(result.startswith("{v0}"))
+
+    def test_placeholder_kept_case_insensitive(self):
+        translator = self._translator()
+        response = FakeResponse(
+            {"choices": [{"message": {"content": "{V0}Tình trạng quá khớp."}}]}
+        )
+        with mock.patch.object(requests.Session, "post", return_value=response):
+            result = translator.do_translate("{v0}Overfitting.")
+        self.assertEqual(result, "{V0}Tình trạng quá khớp.")
+
+    def test_list_marker_clause_and_repair(self):
+        translator = self._translator()
+        prompt = translator._render_prompt("1. {v0} Overfitting of polynomials.")
+        self.assertIn("Keep the leading list number such as 1. unchanged.", prompt)
+
+    def test_list_marker_repair_when_dropped(self):
+        translator = self._translator()
+        response = FakeResponse(
+            {"choices": [{"message": {"content": "{v0} Chúng tôi đã chứng minh."}}]}
+        )
+        with mock.patch.object(requests.Session, "post", return_value=response):
+            result = translator.do_translate("1. {v0} We have shown.")
+        self.assertEqual(result, "1. {v0} Chúng tôi đã chứng minh.")
+
+    def test_list_marker_not_duplicated(self):
+        translator = self._translator()
+        response = FakeResponse(
+            {"choices": [{"message": {"content": "1. {v0} Chúng tôi."}}]}
+        )
+        with mock.patch.object(requests.Session, "post", return_value=response):
+            result = translator.do_translate("1. {v0} We have shown.")
+        self.assertEqual(result, "1. {v0} Chúng tôi.")
 
     def test_clean_translation(self):
         self.assertEqual(

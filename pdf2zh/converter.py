@@ -52,19 +52,19 @@ log = logging.getLogger(__name__)
 # same word creates visible font inconsistency (e.g. Vietnamese "được" = d/ư/ợ/c where
 # the accented chars get noto but plain 'c' gets tiro → two different typefaces in one word).
 _LATIN_EXTENDED_LANGS = {
-    "vi",           # Vietnamese  (ă â ê ô ơ ư đ + full tonal system)
-    "pl",           # Polish      (ą ć ę ł ń ó ś ź ż)
-    "cs",           # Czech       (á č ď é ě í ň ó ř š ť ú ů ý ž)
-    "sk",           # Slovak
-    "hu",           # Hungarian   (á é í ó ö ő ú ü ű)
-    "ro",           # Romanian    (ă â î ș ț)
-    "hr",           # Croatian    (č ć đ š ž)
-    "lt",           # Lithuanian  (ą č ę ė į š ų ū ž)
-    "lv",           # Latvian     (ā č ē ģ ī ķ ļ ņ š ū ž)
-    "et",           # Estonian
-    "tr",           # Turkish     (ç ğ ı İ ö ş ü)
-    "sl",           # Slovenian
-    "bg",           # Bulgarian (Cyrillic, but included for safety)
+    "vi",  # Vietnamese  (ă â ê ô ơ ư đ + full tonal system)
+    "pl",  # Polish      (ą ć ę ł ń ó ś ź ż)
+    "cs",  # Czech       (á č ď é ě í ň ó ř š ť ú ů ý ž)
+    "sk",  # Slovak
+    "hu",  # Hungarian   (á é í ó ö ő ú ü ű)
+    "ro",  # Romanian    (ă â î ș ț)
+    "hr",  # Croatian    (č ć đ š ž)
+    "lt",  # Lithuanian  (ą č ę ė į š ų ū ž)
+    "lv",  # Latvian     (ā č ē ģ ī ķ ļ ņ š ū ž)
+    "et",  # Estonian
+    "tr",  # Turkish     (ç ğ ı İ ö ş ü)
+    "sl",  # Slovenian
+    "bg",  # Bulgarian (Cyrillic, but included for safety)
 }
 
 
@@ -224,8 +224,13 @@ class TranslateConverter(PDFConverterEx):
                 if re.match(self.vfont, font):
                     return True
             else:
-                if re.match(                                            # latex 字体
-                    r"(CM[^R]|MS.M|XY|MT|BL|RM|EU|LA|RS|LINE|LCIRCLE|TeX-|rsfs|txsy|wasy|stmary|.*Mono|.*Code|.*Ital|.*Sym|.*Math)",
+                # LaTeX fonts. "CM(?!R|TI|SS|TT)" keeps the math fonts
+                # (CMMI/CMSY/CMEX/CMBX...) but excludes the Computer Modern
+                # *text* faces (CMR regular, CMTI text italic, CMSS sans,
+                # CMTT typewriter), so italic prose and sans headings are
+                # translated instead of being preserved as formulas.
+                if re.match(
+                    r"(CM(?!R|TI|SS|TT)[A-Z]|MS.M|XY|MT|BL|RM|EU|LA|RS|LINE|LCIRCLE|TeX-|rsfs|txsy|wasy|stmary|.*Mono|.*Code|.*Ital|.*Sym|.*Math)",
                     font,
                 ):
                     return True
