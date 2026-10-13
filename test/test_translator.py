@@ -6,7 +6,12 @@ from ollama import ResponseError as OllamaResponseError
 
 from pdf2zh import cache
 from pdf2zh.config import ConfigManager
-from pdf2zh.translator import BaseTranslator, OllamaTranslator, OpenAIlikedTranslator
+from pdf2zh.translator import (
+    BaseTranslator,
+    OllamaTranslator,
+    OpenAIlikedTranslator,
+    _normalize_base_url,
+)
 
 # Since it is necessary to test whether the functionality meets the expected requirements,
 # private functions and private methods are allowed to be called.
@@ -150,6 +155,50 @@ class TestOpenAIlikedTranslator(unittest.TestCase):
             self.default_envs["OPENAILIKED_BASE_URL"],
         )
         self.assertIsNone(translator.envs["OPENAILIKED_API_KEY"])
+
+    def test_normalize_base_url(self):
+        self.assertEqual(_normalize_base_url("http://h:1"), "http://h:1/v1")
+        self.assertEqual(_normalize_base_url("http://h:1/"), "http://h:1/v1")
+        self.assertEqual(_normalize_base_url("http://h:1/v1"), "http://h:1/v1")
+        self.assertEqual(_normalize_base_url("http://h:1/v1/"), "http://h:1/v1")
+        self.assertEqual(
+            _normalize_base_url("https://api.openai.com/v1"),
+            "https://api.openai.com/v1",
+        )
+        self.assertEqual(_normalize_base_url(""), "")
+
+    def test_bare_base_url_gets_v1_suffix(self):
+        """A bare server root must be completed to /v1 for the OpenAI SDK."""
+        ConfigManager.clear()
+        translator = OpenAIlikedTranslator(
+            lang_in="en",
+            lang_out="zh",
+            model=None,
+            envs={
+                "OPENAILIKED_BASE_URL": "http://127.0.0.1:8080",
+                "OPENAILIKED_MODEL": "test_model",
+            },
+        )
+        self.assertEqual(
+            str(translator.client.base_url).rstrip("/"),
+            "http://127.0.0.1:8080/v1",
+        )
+
+    def test_custom_base_path_untouched(self):
+        ConfigManager.clear()
+        translator = OpenAIlikedTranslator(
+            lang_in="en",
+            lang_out="zh",
+            model=None,
+            envs={
+                "OPENAILIKED_BASE_URL": "http://127.0.0.1:8080/api/openai",
+                "OPENAILIKED_MODEL": "test_model",
+            },
+        )
+        self.assertEqual(
+            str(translator.client.base_url).rstrip("/"),
+            "http://127.0.0.1:8080/api/openai",
+        )
 
 
 class TestOllamaTranslator(unittest.TestCase):

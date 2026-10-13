@@ -7,6 +7,7 @@ import unicodedata
 from copy import copy
 from string import Template
 from typing import cast
+from urllib.parse import urlsplit
 import deepl
 import ollama
 import openai
@@ -34,6 +35,23 @@ logger = logging.getLogger(__name__)
 
 def remove_control_characters(s):
     return "".join(ch for ch in s if unicodedata.category(ch)[0] != "C")
+
+
+def _normalize_base_url(base_url: str) -> str:
+    """Append ``/v1`` when a bare server root is given.
+
+    The OpenAI SDK posts to ``{base_url}/chat/completions``; local servers
+    like LM Studio or llama.cpp expect ``/v1/chat/completions``, so entering
+    ``http://127.0.0.1:8080`` in the UI would otherwise hit the wrong path.
+    Custom paths (``.../v1``, ``.../api/openai``...) are left untouched.
+    """
+    if not base_url:
+        return base_url
+    url = base_url.strip().rstrip("/")
+    parsed = urlsplit(url)
+    if parsed.path in ("", "/"):
+        url += "/v1"
+    return url
 
 
 class BaseTranslator:
@@ -445,7 +463,7 @@ class OpenAITranslator(BaseTranslator):
         if max_tokens > 0:
             self.options["max_tokens"] = max_tokens
         self.client = openai.OpenAI(
-            base_url=base_url or self.envs["OPENAI_BASE_URL"],
+            base_url=_normalize_base_url(base_url or self.envs["OPENAI_BASE_URL"]),
             api_key=api_key or self.envs["OPENAI_API_KEY"],
         )
         self.prompttext = prompt

@@ -136,6 +136,8 @@ def _env_label(key: str) -> str:
 
 def _env_is_secret(key: str) -> bool:
     upper = key.upper()
+    if upper.endswith(("MAX_TOKENS", "STOP_TOKENS")):
+        return False
     return "KEY" in upper or "TOKEN" in upper or "SECRET" in upper
 
 
