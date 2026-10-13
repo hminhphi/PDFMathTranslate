@@ -35,6 +35,7 @@ dependencies = [
     "pikepdf",
     "peewee>=3.17.8",
     "fontTools",
+    "bitstring<4.2",  # babeldoc imports the BitStream API removed in 4.2
     "babeldoc>=0.1.22, <0.3.0",
     "rich",
 ]

@@ -19,7 +19,7 @@ if ($CleanBabelDoc) {
 }
 
 Write-Host "==== Copying source to dep_build ===="
-Get-ChildItem -Path "./" -Exclude "dep_build", "build" | Copy-Item -Destination "./dep_build" -Recurse -Force
+Get-ChildItem -Path "./" -Exclude "dep_build", "build", ".venv", ".artifacts", ".git", "pdf2zh_files", "pdf2zh_files_web", "pdf2zh_release" | Copy-Item -Destination "./dep_build" -Recurse -Force
 
 Write-Host "==== Downloading and extracting Python $PythonVersion ===="
 $pythonUrl = "https://www.python.org/ftp/python/$PythonVersion/python-$PythonVersion-embed-amd64.zip"
@@ -52,27 +52,31 @@ if (Test-Path $pystandExe) {
     exit 1
 }
 
-Write-Host "==== Copying python312.dll to build ===="
+Write-Host "==== Checking runtime Python DLLs ===="
+# PyStand loads python3.dll from build/runtime and Python resolves its home
+# (and python312._pth) next to python312.dll, so the DLLs must stay inside
+# runtime/. Copying them next to pdf2zh.exe shadows the runtime and breaks
+# startup with "No module named 'encodings'".
 $pythonDll312 = "./build/runtime/python312.dll"
-if (Test-Path $pythonDll312) {
-    Copy-Item -Path $pythonDll312 -Destination "./build/python312.dll" -Force
-    Write-Host "Copied python312.dll to build/"
-} else {
-    Write-Host "Warning: python312.dll not found in build/runtime/"
-}
 $pythonDll3 = "./build/runtime/python3.dll"
-if (Test-Path $pythonDll3) {
-    Copy-Item -Path $pythonDll3 -Destination "./build/python3.dll" -Force
-    Write-Host "Copied python3.dll to build/"
+if ((Test-Path $pythonDll312) -and (Test-Path $pythonDll3)) {
+    Write-Host "runtime DLLs present"
+} else {
+    Write-Host "Error: python312.dll / python3.dll missing in build/runtime!"
+    exit 1
 }
 
 Write-Host "==== Creating Python venv ===="
 uv venv ./dep_build/venv
 
 Write-Host "==== Installing project dependencies ===="
-uv pip install .
+$venvPython = "./dep_build/venv/Scripts/python.exe"
+uv pip install --python $venvPython .
 
 Write-Host "==== Copying site-packages to build ===="
+if (Test-Path "./build/site-packages") {
+    Remove-Item -Path "./build/site-packages" -Recurse -Force
+}
 Copy-Item -Path "./dep_build/venv/Lib/site-packages" -Destination "./build/site-packages" -Recurse -Force
 
 Write-Host "==== Copying _pystand_static.int to build ===="
@@ -87,7 +91,7 @@ if (Test-Path $staticFile) {
 
 if ($GenerateOfflineAssets) {
     Write-Host "==== Generating offline assets ===="
-    uv run --active babeldoc --generate-offline-assets ./build
+    & "./dep_build/venv/Scripts/babeldoc.exe" --generate-offline-assets ./build
 }
 
 Write-Host "==== Build complete ===="

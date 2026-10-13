@@ -73,6 +73,19 @@ For OCR of scanned pages add the optional extra:
 uv pip install -e '.[ocr]'
 ```
 
+### 2.4 Portable Windows build
+
+Download the latest `pdf2zh-v1.9.12-vi-with-assets-win64.zip` from the
+[releases page](https://github.com/hminhphi/PDFMathTranslate/releases), unzip
+the folder and double-click `pdf2zh.exe`. The browser opens the web UI at
+<http://localhost:7860>. Font and layout-model assets are bundled, so no
+first-run downloads are needed.
+
+- If Windows refuses to start the exe, run `无法运行请安装vc_redist.x64.exe`
+  (Visual C++ runtime) from the same folder.
+- The folder layout is required — copy the whole folder, not only the exe.
+- Everything runs locally; documents never leave your machine.
+
 ---
 
 ## 3. Quick start
@@ -293,6 +306,18 @@ uv run --no-sync flake8 pdf2zh test
 
 The web UI lives in `pdf2zh/webui/` (FastAPI backend + static viewer) and the
 Office pipeline in `pdf2zh/office/`.
+
+### Build a portable Windows bundle
+
+```powershell
+.\script\build-win64.ps1 -GenerateOfflineAssets -DownloadVCRedist
+```
+
+The result lands in `build/`: `pdf2zh.exe` (PyStand launcher), `runtime/`
+(embedded Python 3.12), `site-packages/` and the offline asset package. Keep
+the layout as-is — `python3.dll` / `python312.dll` must stay inside `runtime/`
+so Python resolves its home and `python312._pth` correctly; copying them next
+to the exe breaks startup.
 
 ---
 
