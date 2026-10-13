@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import tempfile
 import threading
 import uuid
 import webbrowser
@@ -54,7 +55,9 @@ from pdf2zh.translator import (
 logger = logging.getLogger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
-WORK_DIR = Path("pdf2zh_files_web")
+# Keep job files in the user temp dir so the application folder stays clean
+# (the portable exe runs with the app folder as its working directory).
+WORK_DIR = Path(tempfile.gettempdir()) / "pdf2zh_files_web"
 
 SERVICE_MAP = {
     "Google": GoogleTranslator,
