@@ -71,13 +71,31 @@ uv venv ./dep_build/venv
 
 Write-Host "==== Installing project dependencies ===="
 $venvPython = "./dep_build/venv/Scripts/python.exe"
-uv pip install --python $venvPython .
+uv pip install --python $venvPython ".[ocr]"
 
 Write-Host "==== Copying site-packages to build ===="
 if (Test-Path "./build/site-packages") {
     Remove-Item -Path "./build/site-packages" -Recurse -Force
 }
 Copy-Item -Path "./dep_build/venv/Lib/site-packages" -Destination "./build/site-packages" -Recurse -Force
+
+Write-Host "==== Downloading OCR language data ===="
+$tessdataDir = "./build/tessdata"
+New-Item -Path $tessdataDir -ItemType Directory -Force | Out-Null
+$tessBase = "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/4.1.0"
+foreach ($lang in @("eng", "vie", "chi_sim")) {
+    $target = Join-Path $tessdataDir "$lang.traineddata"
+    if (-not (Test-Path $target)) {
+        try {
+            Invoke-WebRequest -Uri "$tessBase/$lang.traineddata" -OutFile $target
+            Write-Host "Downloaded $lang.traineddata"
+        } catch {
+            Write-Host "Warning: could not download $lang.traineddata: $_"
+        }
+    } else {
+        Write-Host "$lang.traineddata already present"
+    }
+}
 
 Write-Host "==== Copying _pystand_static.int to build ===="
 $staticFile = "./script/_pystand_static.int"

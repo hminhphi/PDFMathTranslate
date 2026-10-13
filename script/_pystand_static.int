@@ -4,6 +4,11 @@ import os
 import babeldoc.assets.assets
 import pathlib
 
+# Use the bundled Tesseract language data when present so OCR works offline.
+_tessdata = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tessdata")
+if os.path.isdir(_tessdata):
+    os.environ.setdefault("TESSDATA_PREFIX", _tessdata)
+
 WAIT_FOR_INPUT = False
 if len(sys.argv) == 1:
     sys.argv.append("-i")  # 无参数时自动添加 -i 参数

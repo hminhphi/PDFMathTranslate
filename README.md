@@ -83,6 +83,9 @@ first-run downloads are needed.
 
 - If Windows refuses to start the exe, run `无法运行请安装vc_redist.x64.exe`
   (Visual C++ runtime) from the same folder.
+- Scanned pages are OCRed offline for English, Vietnamese and Simplified
+  Chinese (Tesseract data is bundled in `tessdata/`); other languages are
+  downloaded on first use.
 - The folder layout is required — copy the whole folder, not only the exe.
 - Everything runs locally; documents never leave your machine.
 
